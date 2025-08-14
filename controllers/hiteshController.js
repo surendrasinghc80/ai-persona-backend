@@ -1,29 +1,12 @@
-import dotenv from "dotenv";
 import fs from "fs";
 import { OpenAI } from "openai";
-import path from "path";
+import dotenv from "dotenv";
+
 dotenv.config();
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-// Simple function to store chats in JSON
-function saveChat(userMessage, botMessage) {
-  const chatFile = "./data/chats.json";
-
-  let chats = [];
-  if (fs.existsSync(chatFile)) {
-    chats = JSON.parse(fs.readFileSync(chatFile, "utf-8"));
-  }
-
-  chats.push({
-    timestamp: new Date(),
-    user: userMessage,
-    bot: botMessage,
-  });
-
-  fs.writeFileSync(chatFile, JSON.stringify(chats, null, 2));
-}
 
 export const chatWithHitesh = async (req, res) => {
   try {
@@ -32,26 +15,49 @@ export const chatWithHitesh = async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Load persona prompt with preserved newlines
-    const hiteshPrompt = fs.readFileSync(
-      path.join(process.cwd(), "personas", "hitesh.txt"),
-      "utf8"
-    );
+    // Load persona
+    const hiteshPrompt = fs.readFileSync("./personas/hitesh.txt", "utf-8");
 
+    // Read chat history (if file exists)
+    let history = [];
+    if (fs.existsSync("./data/chats.json")) {
+      const rawData = fs.readFileSync("./data/chats.json", "utf-8");
+      history = JSON.parse(rawData);
+    }
+
+    // Convert history to OpenAI message format
+    const formattedHistory = history
+      .map((entry) => [
+        { role: "user", content: entry.user },
+        { role: "assistant", content: entry.bot },
+      ])
+      .flat();
+
+    // Prepare messages for OpenAI
+    const messages = [
+      { role: "system", content: hiteshPrompt },
+      ...formattedHistory,
+      { role: "user", content: userMessage },
+    ];
+
+    // Call OpenAI
     const response = await client.chat.completions.create({
       model: "gpt-4.1-mini",
-      messages: [
-        { role: "system", content: hiteshPrompt },
-        { role: "user", content: userMessage },
-      ],
+      messages,
     });
 
-    let botMessage = response.choices[0].message.content || "";
+    const botMessage = response.choices[0].message.content;
 
-    // Ensure proper line breaks
-    botMessage = botMessage.replace(/\r\n/g, "\n"); // normalize Windows/Mac line endings
-
-    saveChat(userMessage, botMessage);
+    // Save updated chat history
+    const newHistory = [
+      ...history,
+      {
+        timestamp: new Date().toISOString(),
+        user: userMessage,
+        bot: botMessage,
+      },
+    ];
+    fs.writeFileSync("./data/chats.json", JSON.stringify(newHistory, null, 2));
 
     res.json({ reply: botMessage });
   } catch (error) {

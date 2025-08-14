@@ -1,56 +1,70 @@
 import fs from "fs";
-import path from "path";
-import OpenAI from "openai";
+import { OpenAI } from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const openai = new OpenAI({
+const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Get absolute path to piyush.txt
-const promptPath = path.join(process.cwd(), "personas", "piyush.txt");
-
-// Load Piyush persona instructions once
-const piyushPersona = fs.readFileSync(promptPath, "utf-8");
-
-/**
- * POST /api/piyush/chat
- * Body: { message: string }
- */
 export const piyushChat = async (req, res) => {
   try {
-    const { message } = req.body;
-
-    if (!message) {
+    const userMessage = req.body.message;
+    if (!userMessage) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Create conversation prompt
-    const fullPrompt = `
-${piyushPersona}
+    // Load persona
+    const piyushPrompt = fs.readFileSync("./personas/piyush.txt", "utf-8");
 
-User: ${message}
-Piyush:
-    `;
+    // Read chat history (if file exists)
+    let history = [];
+    if (fs.existsSync("./data/piyush_chats.json")) {
+      const rawData = fs.readFileSync("./data/piyush_chats.json", "utf-8");
+      history = JSON.parse(rawData);
+    }
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: piyushPersona },
-        { role: "user", content: message },
-      ],
-      temperature: 0.8,
-      max_tokens: 500,
+    // Convert history to OpenAI message format
+    const formattedHistory = history
+      .map((entry) => [
+        { role: "user", content: entry.user },
+        { role: "assistant", content: entry.bot },
+      ])
+      .flat();
+
+    // Prepare messages for OpenAI
+    const messages = [
+      { role: "system", content: piyushPrompt },
+      ...formattedHistory,
+      { role: "user", content: userMessage },
+    ];
+
+    // Call OpenAI
+    const response = await client.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages,
     });
 
-    const aiReply = completion.choices[0]?.message?.content || "";
+    const botMessage = response.choices[0].message.content;
 
-    res.json({ reply: aiReply });
+    // Save updated chat history
+    const newHistory = [
+      ...history,
+      {
+        timestamp: new Date().toISOString(),
+        user: userMessage,
+        bot: botMessage,
+      },
+    ];
+    fs.writeFileSync(
+      "./data/piyush_chats.json",
+      JSON.stringify(newHistory, null, 2)
+    );
+
+    res.json({ reply: botMessage });
   } catch (error) {
-    console.error("Piyush AI Error:", error);
+    console.error("Error:", error);
     res.status(500).json({ error: "Something went wrong" });
   }
 };
