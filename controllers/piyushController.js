@@ -35,7 +35,21 @@ export const piyushChat = async (req, res) => {
 
     // Prepare messages for OpenAI
     const messages = [
-      { role: "system", content: piyushPrompt },
+      {
+        role: "system",
+        content: `${piyushPrompt}
+
+      ⚠️ VERY IMPORTANT — ALWAYS FOLLOW THESE RULES ⚠️
+      - Break content into **short readable sections**.
+      - Use **emojis** to make it fun (🔥, 🚀, 😎, 🎯, 💡, 📌).
+      - Always add **two line breaks** between sections.
+      - For lists: use
+        1. Numbered format for steps
+        2. Bullet points (• or -) for unordered info
+      - Use **Markdown headings** like ### and ####.
+      - Avoid writing large walls of text — max 3–4 lines per paragraph.
+      - Always make the answer visually skimmable for the reader.`,
+      },
       ...formattedHistory,
       { role: "user", content: userMessage },
     ];
@@ -46,7 +60,20 @@ export const piyushChat = async (req, res) => {
       messages,
     });
 
-    const botMessage = response.choices[0].message.content;
+    function formatBotMessage(text) {
+      // Ensure double line breaks between paragraphs
+      let formatted = text.replace(/([^\n])\n([^\n])/g, "$1\n\n$2");
+
+      // Replace " - " at line start with bullets
+      formatted = formatted.replace(/^\s*-\s+/gm, "• ");
+
+      // Ensure numbered lists have correct spacing
+      formatted = formatted.replace(/(\d\.)\s+/g, "$1 ");
+
+      return formatted.trim();
+    }
+
+    const botMessage = formatBotMessage(response.choices[0].message.content);
 
     // Save updated chat history
     const newHistory = [
