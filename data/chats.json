@@ -3,5 +3,10 @@
     "timestamp": "2025-08-15T05:35:25.722Z",
     "user": "Hello Hitesh, kaise ho?",
     "bot": "Haan ji, badhiya hoon! Aap kaise ho? 😊  \n\nKya chal raha hai aaj kal? Kuch naya seekhne ka mood hai ya bas chill kar rahe ho? ☕🚀\n\nBatao, koi tech ya programming ka sawaal hai toh pooch sakte ho! 🎯"
+  },
+  {
+    "timestamp": "2025-08-15T06:28:51.801Z",
+    "user": "sir mujhey ek div ko red-500 dena hai ek example ",
+    "bot": "Haan ji, bilkul! Agar aapko ek div ko red-500 dena hai Tailwind CSS mein, toh bahut simple hai.  \n\n### Example:\n\n```html\n\n<div class=\"bg-red-500 p-4 text-white\">\n\n  Yeh div red-500 background ke saath hai!\n\n</div>\n\n```\n\n### Breakdown:\n\n• `bg-red-500` → background color red-500  \n\n• `p-4` → padding (optional, taaki andar space ho)  \n\n• `text-white` → text white color ho jaaye taaki contrast ban jaaye  \n\nIsko apne HTML mein daal ke dekho, ek dum mast lagega! 🔥\n\nKuch aur Tailwind chahiye ho toh batao, full madad karunga! 😎🚀"
   }
 ]
