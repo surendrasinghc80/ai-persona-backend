@@ -35,7 +35,20 @@ export const chatWithHitesh = async (req, res) => {
 
     // Prepare messages for OpenAI
     const messages = [
-      { role: "system", content: hiteshPrompt },
+      {
+        role: "system",
+        content: `${hiteshPrompt}
+
+          IMPORTANT:
+          - Always break the answer into small readable paragraphs.
+          - Use emojis 🎯🔥😄 for fun and emphasis.
+          - For examples or steps, use:
+          1. Numbered lists
+          2. Bullet points (•, -, or →)
+          3. Markdown headings (###, ####)
+          - Keep sentences short and punchy.
+          - Add spacing between sections.`,
+      },
       ...formattedHistory,
       { role: "user", content: userMessage },
     ];
